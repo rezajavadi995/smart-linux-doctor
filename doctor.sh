@@ -77,12 +77,36 @@ duplicate_files() {
   fi
 }
 
-# Unused packages
+# Improved Unused Packages
 unused_packages() {
-  if command -v apt >/dev/null; then
-    apt list --installed 2>/dev/null | grep auto || true
+  if ! command -v apt >/dev/null; then
+    echo "❌ Package manager not supported"
+    return
+  fi
+
+  echo "🧹 Checking for unused/auto-installed packages..."
+
+  # لیست پکیج‌های automatic
+  AUTO_PACKAGES=$(apt-mark showauto)
+
+  UNUSED=()
+  for pkg in $AUTO_PACKAGES; do
+    # بررسی اینکه آیا هیچ پکیج دیگری بهش وابسته است یا نه
+    DEPENDENTS=$(apt-cache rdepends "$pkg" 2>/dev/null | grep -v "^$pkg$" | grep -v "Reverse Depends:")
+    if [ -z "$DEPENDENTS" ]; then
+      UNUSED+=("$pkg")
+    fi
+  done
+
+  if [ ${#UNUSED[@]} -eq 0 ]; then
+    echo "✔ No unused packages detected"
   else
-    echo "package manager not supported"
+    echo "⚠️ Unused packages found:"
+    for p in "${UNUSED[@]}"; do
+      echo "  - $p"
+    done
+    echo ""
+    echo "💡 Tip: You can remove them with 'sudo apt remove <package>' if you are sure"
   fi
 }
 
