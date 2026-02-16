@@ -54,32 +54,33 @@ curl -fsSL https://raw.githubusercontent.com/rezajavadi995/smart-linux-doctor/ma
 ## After installation, the tool will be located at:
 ### ~/.smart-linux-doctor/doctor.sh
 
----
 
-# ▶️ Usage
+---
+# ▶️ Usage Shortcut Command
+
 ## 🧭 Interactive Mode (Recommended for desktops):
 
 ```
-~/.smart-linux-doctor/doctor.sh
-
+doctor
 ```
-### Provides a full menu-driven interface with explanations and guidance.
-
----
-
-
-## 🤖 Non-Interactive Mode (Servers / SSH)
-```
-~/.smart-linux-doctor/doctor.sh --auto
-```
-### Runs a full system analysis automatically.
+**Provides a full menu-driven interface with explanations and guidance.**
 
 
 ---
-## 📊 JSON Output (Monitoring / Automation)
+## 🤖 Non-Interactive Mode (Servers / SSH):
 ```
-~/.smart-linux-doctor/doctor.sh --auto --json
+doctor --auto
 ```
+**Runs a full system analysis automatically.**
+
+
+---
+## 📊 JSON Output (Monitoring / Automation):
+```
+doctor --auto --json
+```
+**Outputs all system information in JSON format for automation, monitoring, or logging.**
+
 ---
 
 ## 🛡 Safety Principles
