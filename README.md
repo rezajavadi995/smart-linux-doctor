@@ -48,3 +48,48 @@ Works on **all supported devices**:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/rezajavadi995/smart-linux-doctor/main/install.sh | bash
+```
+
+---
+## After installation, the tool will be located at:
+### ~/.smart-linux-doctor/doctor.sh
+
+---
+
+# ▶️ Usage
+## 🧭 Interactive Mode (Recommended for desktops):
+
+```
+~/.smart-linux-doctor/doctor.sh
+
+```
+### Provides a full menu-driven interface with explanations and guidance.
+
+---
+
+
+## 🤖 Non-Interactive Mode (Servers / SSH)
+```
+~/.smart-linux-doctor/doctor.sh --auto
+```
+### Runs a full system analysis automatically.
+
+
+---
+## 📊 JSON Output (Monitoring / Automation)
+```
+~/.smart-linux-doctor/doctor.sh --auto --json
+```
+---
+
+## 🛡 Safety Principles
+
+**Smart Linux Doctor** will never:
+
+- ❌ Delete files automatically  
+- ❌ Kill running processes  
+- ❌ Modify swap or system configurations  
+- ❌ Run system upgrades or risky commands  
+
+All actions are **analysis-only**, with clear explanations and full user control.
+
