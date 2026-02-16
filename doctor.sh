@@ -45,9 +45,10 @@ load_average() {
     LOAD_5=$(awk '{print $2}' /proc/loadavg)
     LOAD_15=$(awk '{print $3}' /proc/loadavg)
   else
-    LOAD_1="N/A"
-    LOAD_5="N/A"
-    LOAD_15="N/A"
+    LOADS=$(uptime | awk -F'load average: ' '{print $2}')
+    LOAD_1=$(echo $LOADS | cut -d, -f1)
+    LOAD_5=$(echo $LOADS | cut -d, -f2)
+    LOAD_15=$(echo $LOADS | cut -d, -f3)
   fi
 }
 
@@ -173,21 +174,28 @@ install_python() {
 }
 
 run_python_analysis() {
-  if command -v python3 >/dev/null && [ -f "$(dirname "$0")/analyzer.py" ]; then
-    generate_json | python3 "$(dirname "$0")/analyzer.py"
+  # مسیر واقعی اسکریپت
+  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
+  ANALYZER="$SCRIPT_DIR/analyzer.py"
+
+  # اگر Python و analyzer.py موجود باشند → اجرا کن
+  if command -v python3 >/dev/null && [ -f "$ANALYZER" ]; then
+    generate_json | python3 "$ANALYZER"
     return
   fi
 
+  # اگر حالت اتوماتیک است → فقط پیام بده و ادامه بده
   if $AUTO_MODE; then
-    echo "ℹ️ Python or analyzer.py not available. Skipping advanced AI analysis."
+    echo "ℹ️ Python 3 or analyzer.py not available. Skipping advanced AI analysis."
     return
   fi
 
+  # حالت تعاملی: پیام و گزینه به کاربر
   echo ""
-  echo "⚠️ Python is not installed or analyzer.py missing."
+  echo "⚠️ Python 3 is not installed or analyzer.py missing."
   echo "Advanced AI analysis requires Python 3 and analyzer.py."
   echo ""
-  echo "1) Install Python"
+  echo "1) Install Python 3"
   echo "2) Skip AI analysis"
   echo ""
   read -p "Choose [1/2]: " PY_CHOICE
