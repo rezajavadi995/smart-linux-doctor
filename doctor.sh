@@ -143,7 +143,10 @@ EOF
 }
 
 install_python() {
+install_python() {
   OS=$(detect_os)
+  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
+  ANALYZER="$SCRIPT_DIR/analyzer.py"
 
   echo "📦 Installing Python 3..."
 
@@ -165,39 +168,34 @@ install_python() {
       ;;
   esac
 
-  if command -v python3 >/dev/null && [ -f "$(dirname "$0")/analyzer.py" ]; then
+  if command -v python3 >/dev/null && [ -f "$ANALYZER" ]; then
     echo "✅ Python installed successfully"
-    generate_json | python3 "$(dirname "$0")/analyzer.py"
+    generate_json | python3 "$ANALYZER"
   else
     echo "ℹ️ Python not available or analyzer.py missing. Skipping advanced AI analysis."
   fi
 }
 
 run_python_analysis() {
-  # مسیر واقعی اسکریپت
   SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
   ANALYZER="$SCRIPT_DIR/analyzer.py"
 
-  # اگر Python و analyzer.py موجود باشند → اجرا کن
   if command -v python3 >/dev/null && [ -f "$ANALYZER" ]; then
     generate_json | python3 "$ANALYZER"
     return
   fi
 
-  # اگر حالت اتوماتیک است → فقط پیام بده و ادامه بده
   if $AUTO_MODE; then
-    echo "ℹ️ Python 3 or analyzer.py not available. Skipping advanced AI analysis."
+    echo "ℹ️ Python or analyzer.py missing. Skipping advanced AI analysis."
     return
   fi
 
-  # حالت تعاملی: پیام و گزینه به کاربر
   echo ""
   echo "⚠️ Python 3 is not installed or analyzer.py missing."
   echo "Advanced AI analysis requires Python 3 and analyzer.py."
   echo ""
   echo "1) Install Python 3"
   echo "2) Skip AI analysis"
-  echo ""
   read -p "Choose [1/2]: " PY_CHOICE
 
   case "$PY_CHOICE" in
