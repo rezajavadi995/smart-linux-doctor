@@ -142,7 +142,7 @@ json_output() {
 EOF
 }
 
-install_python() {
+
 install_python() {
   OS=$(detect_os)
   SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
