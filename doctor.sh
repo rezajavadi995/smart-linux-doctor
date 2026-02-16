@@ -82,13 +82,13 @@ swap_advice() {
 }
 
 generate_json() {
-  SWAP_USED=$(free -m | awk '/Swap:/ {print $3}' 2>/dev/null || echo 0)
+  SWAP_USED=$(free -m | awk '/Swap:/ {print $3}')
   cat <<EOF
 {
   "cpu_cores": $CORES,
-  "load_1": "$LOAD_1",
-  "load_5": "$LOAD_5",
-  "load_15": "$LOAD_15",
+  "load_1": $(echo $LOAD_1 | awk '{printf "%f",$1}'),
+  "load_5": $(echo $LOAD_5 | awk '{printf "%f",$1}'),
+  "load_15": $(echo $LOAD_15 | awk '{printf "%f",$1}'),
   "mem_total": $MEM_TOTAL,
   "mem_used": $MEM_USED,
   "swap_total": $SWAP_TOTAL,
