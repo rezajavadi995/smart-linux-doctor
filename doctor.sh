@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+set -e
+
+# ==========================================
+# Smart Linux Doctor - Advanced AI Analysis
+# ==========================================
 
 LOG_DIR="$(dirname "$0")/logs"
 LOG_FILE="$LOG_DIR/actions.log"
@@ -7,6 +12,7 @@ mkdir -p "$LOG_DIR"
 AUTO_MODE=false
 JSON_MODE=false
 
+# Parse args
 for arg in "$@"; do
   case "$arg" in
     --auto) AUTO_MODE=true ;;
@@ -14,10 +20,12 @@ for arg in "$@"; do
   esac
 done
 
+# Logging function
 log() {
   echo "[$(date '+%F %T')] $1" >> "$LOG_FILE"
 }
 
+# Detect OS
 detect_os() {
   if [ -n "$TERMUX_VERSION" ]; then
     echo "termux"
@@ -29,6 +37,7 @@ detect_os() {
   fi
 }
 
+# Gather system info
 system_info() {
   CPU_MODEL=$(lscpu 2>/dev/null | grep "Model name" | cut -d: -f2 | xargs || echo "Unknown CPU")
   CORES=$(nproc 2>/dev/null || echo 1)
@@ -39,6 +48,7 @@ system_info() {
   DISK_TOTAL=$(df -h / | awk 'NR==2 {print $2}' 2>/dev/null || echo "N/A")
 }
 
+# Load averages
 load_average() {
   if [ -r /proc/loadavg ]; then
     LOAD_1=$(awk '{print $1}' /proc/loadavg)
@@ -52,10 +62,13 @@ load_average() {
   fi
 }
 
+# Top memory-consuming processes
 top_ram_processes() {
+  echo ""
   ps aux --sort=-%mem 2>/dev/null | head -n 6 || echo "Cannot list processes"
 }
 
+# Duplicate files
 duplicate_files() {
   if command -v fdupes >/dev/null; then
     fdupes -r "$HOME"
@@ -64,6 +77,7 @@ duplicate_files() {
   fi
 }
 
+# Unused packages
 unused_packages() {
   if command -v apt >/dev/null; then
     apt list --installed 2>/dev/null | grep auto || true
@@ -72,6 +86,7 @@ unused_packages() {
   fi
 }
 
+# Swap advice
 swap_advice() {
   if [ "$SWAP_TOTAL" -eq 0 ] && [ "$MEM_TOTAL" -le 4096 ]; then
     echo "⚠️ No swap detected with low RAM"
@@ -81,6 +96,7 @@ swap_advice() {
   fi
 }
 
+# Generate JSON for Python analyzer
 generate_json() {
   SWAP_USED=$(free -m | awk '/Swap:/ {print $3}')
   cat <<EOF
@@ -97,27 +113,25 @@ generate_json() {
 EOF
 }
 
+# Basic AI explanation
 ai_explanation() {
   echo "🧠 AI System Analysis:"
-
   if [[ "$LOAD_1" != "N/A" ]]; then
     awk "BEGIN {exit !($LOAD_1 > $CORES)}" && echo "- High CPU load relative to cores"
   fi
-
   if [ "$MEM_USED" -gt $((MEM_TOTAL * 80 / 100)) ]; then
     echo "- RAM usage above 80%"
   fi
-
   if [ "$SWAP_TOTAL" -gt 0 ]; then
     SWAP_USED=$(free -m | awk '/Swap:/ {print $3}' 2>/dev/null || echo 0)
     if [ "$SWAP_USED" -gt 0 ]; then
       echo "- Active swap usage indicates memory pressure"
     fi
   fi
-
   echo "- Check top memory-consuming processes"
 }
 
+# JSON output
 json_output() {
   cat <<EOF
 {
@@ -142,7 +156,7 @@ json_output() {
 EOF
 }
 
-
+# Install Python and dependencies
 install_python() {
   OS=$(detect_os)
   SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" &>/dev/null && pwd)"
@@ -157,7 +171,7 @@ install_python() {
         return
       fi
       sudo apt update
-      sudo apt install -y python3
+      sudo apt install -y python3 python3-pip
       ;;
     termux)
       pkg install -y python
@@ -176,6 +190,7 @@ install_python() {
   fi
 }
 
+# Run Python AI analyzer
 run_python_analysis() {
   SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" &>/dev/null && pwd)"
   ANALYZER="$SCRIPT_DIR/analyzer.py"
@@ -207,6 +222,7 @@ run_python_analysis() {
   esac
 }
 
+# Run full analysis
 run_all() {
   system_info
   load_average
@@ -225,7 +241,6 @@ run_all() {
   echo ""
 
   ai_explanation
-  echo ""
   swap_advice
   echo ""
   echo "🔥 Top RAM Consumers:"
@@ -234,6 +249,7 @@ run_all() {
   run_python_analysis
 }
 
+# Main menu
 menu() {
   while true; do
     clear
