@@ -5,21 +5,6 @@ echo "🩺 Smart Linux Doctor Installer"
 
 INSTALL_DIR="$HOME/.smart-linux-doctor"
 
-if [ -d "$INSTALL_DIR" ]; then
-  echo "⚠️ Already installed at $INSTALL_DIR"
-  exit 0
-fi
-
-if ! command -v git >/dev/null; then
-  echo "❌ Git is not installed. Please install git first."
-  exit 1
-fi
-
-# Clone the repository (public repo)
-git clone https://github.com/rezajavadi995/smart-linux-doctor.git "$INSTALL_DIR"
-
-chmod +x "$INSTALL_DIR/doctor.sh"
-
 # Detect Termux
 if [ -n "$PREFIX" ]; then
   BIN_DIR="$PREFIX/bin"
@@ -28,6 +13,32 @@ else
 fi
 
 mkdir -p "$BIN_DIR"
+
+if [ -d "$INSTALL_DIR" ]; then
+  echo "⚠️ Smart Linux Doctor already installed at $INSTALL_DIR"
+  echo "🔄 Updating to latest version..."
+  cd "$INSTALL_DIR"
+  git reset --hard
+  git pull origin main || {
+    echo "❌ Failed to update. Check your network or git configuration."
+    exit 1
+  }
+else
+  if ! command -v git >/dev/null; then
+    echo "❌ Git is not installed. Please install git first."
+    exit 1
+  fi
+
+  echo "Cloning Smart Linux Doctor..."
+  git clone https://github.com/rezajavadi995/smart-linux-doctor.git "$INSTALL_DIR" || {
+    echo "❌ Clone failed. Check your network."
+    exit 1
+  }
+fi
+
+chmod +x "$INSTALL_DIR/doctor.sh"
+
+# Create/update symlink
 ln -sf "$INSTALL_DIR/doctor.sh" "$BIN_DIR/doctor"
 
 # Check PATH
@@ -42,7 +53,7 @@ if [[ ":$PATH:" != *":$BIN_DIR:"* ]]; then
 fi
 
 echo ""
-echo "✅ Installation complete"
+echo "✅ Smart Linux Doctor is installed and up-to-date"
 echo ""
 echo "Run full system analysis interactively:"
 echo "  doctor"
