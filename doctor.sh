@@ -30,23 +30,29 @@ detect_os() {
 }
 
 system_info() {
-  CPU_MODEL=$(lscpu | grep "Model name" | cut -d: -f2 | xargs)
-  CORES=$(nproc)
-  MEM_TOTAL=$(free -m | awk '/Mem:/ {print $2}')
-  MEM_USED=$(free -m | awk '/Mem:/ {print $3}')
-  SWAP_TOTAL=$(free -m | awk '/Swap:/ {print $2}')
-  DISK_USED=$(df -h / | awk 'NR==2 {print $3}')
-  DISK_TOTAL=$(df -h / | awk 'NR==2 {print $2}')
+  CPU_MODEL=$(lscpu 2>/dev/null | grep "Model name" | cut -d: -f2 | xargs || echo "Unknown CPU")
+  CORES=$(nproc 2>/dev/null || echo 1)
+  MEM_TOTAL=$(free -m | awk '/Mem:/ {print $2}' 2>/dev/null || echo 0)
+  MEM_USED=$(free -m | awk '/Mem:/ {print $3}' 2>/dev/null || echo 0)
+  SWAP_TOTAL=$(free -m | awk '/Swap:/ {print $2}' 2>/dev/null || echo 0)
+  DISK_USED=$(df -h / | awk 'NR==2 {print $3}' 2>/dev/null || echo "N/A")
+  DISK_TOTAL=$(df -h / | awk 'NR==2 {print $2}' 2>/dev/null || echo "N/A")
 }
 
 load_average() {
-  LOAD_1=$(awk '{print $1}' /proc/loadavg)
-  LOAD_5=$(awk '{print $2}' /proc/loadavg)
-  LOAD_15=$(awk '{print $3}' /proc/loadavg)
+  if [ -r /proc/loadavg ]; then
+    LOAD_1=$(awk '{print $1}' /proc/loadavg)
+    LOAD_5=$(awk '{print $2}' /proc/loadavg)
+    LOAD_15=$(awk '{print $3}' /proc/loadavg)
+  else
+    LOAD_1="N/A"
+    LOAD_5="N/A"
+    LOAD_15="N/A"
+  fi
 }
 
 top_ram_processes() {
-  ps aux --sort=-%mem | head -n 6
+  ps aux --sort=-%mem 2>/dev/null | head -n 6 || echo "Cannot list processes"
 }
 
 duplicate_files() {
@@ -74,31 +80,27 @@ swap_advice() {
   fi
 }
 
-
 generate_json() {
+  SWAP_USED=$(free -m | awk '/Swap:/ {print $3}' 2>/dev/null || echo 0)
   cat <<EOF
 {
   "cpu_cores": $CORES,
-  "load_1": $LOAD_1,
-  "load_5": $LOAD_5,
-  "load_15": $LOAD_15,
+  "load_1": "$LOAD_1",
+  "load_5": "$LOAD_5",
+  "load_15": "$LOAD_15",
   "mem_total": $MEM_TOTAL,
   "mem_used": $MEM_USED,
   "swap_total": $SWAP_TOTAL,
-  "swap_used": $(free -m | awk '/Swap:/ {print $3}')
+  "swap_used": $SWAP_USED
 }
 EOF
 }
 
-
-
-
-
 ai_explanation() {
   echo "🧠 AI System Analysis:"
 
-  if awk "BEGIN {exit !($LOAD_1 > $CORES)}"; then
-    echo "- High CPU load relative to cores"
+  if [[ "$LOAD_1" != "N/A" ]]; then
+    awk "BEGIN {exit !($LOAD_1 > $CORES)}" && echo "- High CPU load relative to cores"
   fi
 
   if [ "$MEM_USED" -gt $((MEM_TOTAL * 80 / 100)) ]; then
@@ -106,7 +108,7 @@ ai_explanation() {
   fi
 
   if [ "$SWAP_TOTAL" -gt 0 ]; then
-    SWAP_USED=$(free -m | awk '/Swap:/ {print $3}')
+    SWAP_USED=$(free -m | awk '/Swap:/ {print $3}' 2>/dev/null || echo 0)
     if [ "$SWAP_USED" -gt 0 ]; then
       echo "- Active swap usage indicates memory pressure"
     fi
@@ -139,7 +141,6 @@ json_output() {
 EOF
 }
 
-#
 install_python() {
   OS=$(detect_os)
 
@@ -163,29 +164,28 @@ install_python() {
       ;;
   esac
 
-  if command -v python3 >/dev/null; then
+  if command -v python3 >/dev/null && [ -f "$(dirname "$0")/analyzer.py" ]; then
     echo "✅ Python installed successfully"
     generate_json | python3 "$(dirname "$0")/analyzer.py"
   else
-    echo "❌ Python installation failed or cancelled"
+    echo "ℹ️ Python not available or analyzer.py missing. Skipping advanced AI analysis."
   fi
 }
-#
+
 run_python_analysis() {
-  if command -v python3 >/dev/null; then
+  if command -v python3 >/dev/null && [ -f "$(dirname "$0")/analyzer.py" ]; then
     generate_json | python3 "$(dirname "$0")/analyzer.py"
     return
   fi
 
-  # اگر حالت اتوماتیک یا سرور است → سؤال نپرس
   if $AUTO_MODE; then
-    echo "ℹ️ Python not available. Skipping advanced AI analysis."
+    echo "ℹ️ Python or analyzer.py not available. Skipping advanced AI analysis."
     return
   fi
 
   echo ""
-  echo "⚠️ Python is not installed."
-  echo "Advanced AI analysis requires Python 3."
+  echo "⚠️ Python is not installed or analyzer.py missing."
+  echo "Advanced AI analysis requires Python 3 and analyzer.py."
   echo ""
   echo "1) Install Python"
   echo "2) Skip AI analysis"
