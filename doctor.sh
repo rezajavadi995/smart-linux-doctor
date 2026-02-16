@@ -74,10 +74,30 @@ swap_advice() {
   fi
 }
 
+
+generate_json() {
+  cat <<EOF
+{
+  "cpu_cores": $CORES,
+  "load_1": $LOAD_1,
+  "load_5": $LOAD_5,
+  "load_15": $LOAD_15,
+  "mem_total": $MEM_TOTAL,
+  "mem_used": $MEM_USED,
+  "swap_total": $SWAP_TOTAL,
+  "swap_used": $(free -m | awk '/Swap:/ {print $3}')
+}
+EOF
+}
+
+
+
+
+
 ai_explanation() {
   echo "🧠 AI System Analysis:"
 
-  if (( $(echo "$LOAD_1 > $CORES" | bc -l) )); then
+  if awk "BEGIN {exit !($LOAD_1 > $CORES)}"; then
     echo "- High CPU load relative to cores"
   fi
 
@@ -119,6 +139,69 @@ json_output() {
 EOF
 }
 
+#
+install_python() {
+  OS=$(detect_os)
+
+  echo "📦 Installing Python 3..."
+
+  case "$OS" in
+    ubuntu|debian|kali)
+      if ! command -v sudo >/dev/null; then
+        echo "❌ sudo not available. Please install Python manually."
+        return
+      fi
+      sudo apt update
+      sudo apt install -y python3
+      ;;
+    termux)
+      pkg install -y python
+      ;;
+    *)
+      echo "❌ Unsupported system. Please install Python manually."
+      return
+      ;;
+  esac
+
+  if command -v python3 >/dev/null; then
+    echo "✅ Python installed successfully"
+    generate_json | python3 "$(dirname "$0")/analyzer.py"
+  else
+    echo "❌ Python installation failed or cancelled"
+  fi
+}
+#
+run_python_analysis() {
+  if command -v python3 >/dev/null; then
+    generate_json | python3 "$(dirname "$0")/analyzer.py"
+    return
+  fi
+
+  # اگر حالت اتوماتیک یا سرور است → سؤال نپرس
+  if $AUTO_MODE; then
+    echo "ℹ️ Python not available. Skipping advanced AI analysis."
+    return
+  fi
+
+  echo ""
+  echo "⚠️ Python is not installed."
+  echo "Advanced AI analysis requires Python 3."
+  echo ""
+  echo "1) Install Python"
+  echo "2) Skip AI analysis"
+  echo ""
+  read -p "Choose [1/2]: " PY_CHOICE
+
+  case "$PY_CHOICE" in
+    1)
+      install_python
+      ;;
+    *)
+      echo "ℹ️ Skipping AI analysis."
+      ;;
+  esac
+}
+
 run_all() {
   system_info
   load_average
@@ -142,6 +225,8 @@ run_all() {
   echo ""
   echo "🔥 Top RAM Consumers:"
   top_ram_processes
+  echo ""
+  run_python_analysis
 }
 
 menu() {
