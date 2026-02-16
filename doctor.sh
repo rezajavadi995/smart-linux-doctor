@@ -145,7 +145,7 @@ EOF
 
 install_python() {
   OS=$(detect_os)
-  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
+  SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" &>/dev/null && pwd)"
   ANALYZER="$SCRIPT_DIR/analyzer.py"
 
   echo "📦 Installing Python 3..."
@@ -177,9 +177,8 @@ install_python() {
 }
 
 run_python_analysis() {
-  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
+  SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" &>/dev/null && pwd)"
   ANALYZER="$SCRIPT_DIR/analyzer.py"
-
   if command -v python3 >/dev/null && [ -f "$ANALYZER" ]; then
     generate_json | python3 "$ANALYZER"
     return
