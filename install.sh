@@ -36,7 +36,9 @@ else
   }
 fi
 
+# Make scripts executable
 chmod +x "$INSTALL_DIR/doctor.sh"
+chmod +x "$INSTALL_DIR/analyzer.py" 2>/dev/null || true
 
 # Create/update symlink
 ln -sf "$INSTALL_DIR/doctor.sh" "$BIN_DIR/doctor"
