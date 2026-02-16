@@ -10,13 +10,48 @@ if [ -d "$INSTALL_DIR" ]; then
   exit 0
 fi
 
-git clone https://github.com/YOUR_USERNAME/smart-linux-doctor.git "$INSTALL_DIR"
+if ! command -v git >/dev/null; then
+  echo "❌ Git is not installed. Please install git first."
+  exit 1
+fi
+
+# Clone the repository
+git clone https://github.com/rezajavadi995/smart-linux-doctor.git "$INSTALL_DIR"
 
 chmod +x "$INSTALL_DIR/doctor.sh"
 
+# Detect Termux
+if [ -n "$PREFIX" ]; then
+  # Termux detected
+  BIN_DIR="$PREFIX/bin"
+else
+  BIN_DIR="$HOME/.local/bin"
+fi
+
+mkdir -p "$BIN_DIR"
+ln -sf "$INSTALL_DIR/doctor.sh" "$BIN_DIR/doctor"
+
+# Check if BIN_DIR is in PATH
+if [[ ":$PATH:" != *":$BIN_DIR:"* ]]; then
+  echo ""
+  echo "⚠️ Notice: $BIN_DIR is not in your PATH."
+  echo "To run 'doctor' from anywhere, add this line to your shell config (e.g., ~/.bashrc or ~/.zshrc):"
+  echo ""
+  echo "  export PATH=\"\$PATH:$BIN_DIR\""
+  echo ""
+  echo "Then restart your terminal or run 'source ~/.bashrc' (or 'source ~/.zshrc')"
+fi
+
 echo ""
 echo "✅ Installation complete"
-echo "Run:"
+echo ""
+echo "Run full system analysis interactively:"
 echo "  $INSTALL_DIR/doctor.sh"
-echo "Non-interactive (server):"
+echo ""
+echo "Run in non-interactive server mode (JSON output):"
 echo "  $INSTALL_DIR/doctor.sh --auto --json"
+echo ""
+echo "Or, if symlink is in PATH, you can run:"
+echo "  doctor --auto --json"
+echo ""
+echo "💡 Note: If 'doctor' command doesn't work, make sure $BIN_DIR is in your PATH"
